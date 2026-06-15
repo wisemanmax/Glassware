@@ -8,7 +8,15 @@
 // =============================================================================
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { ProceduralCharacter } from './CharacterFactory.js';
+
+// Decoder assets are pulled from the matching three version on jsDelivr so the
+// raw (no-build) GitHub Pages deploy works; same URLs are fine through Vite.
+const THREE_CDN = 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/libs';
 
 const ANIM_ALIASES = {
   idle: ['idle', 'Idle', 'mixamo.com', 'Armature|idle'],
@@ -20,9 +28,30 @@ const ANIM_ALIASES = {
 };
 
 class GLBCharacter {
-  constructor(gltf) {
-    this.object3d = gltf.scene;
-    this.object3d.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  constructor(gltf, def = {}) {
+    // Wrap in a group so we can auto-fit (scale + ground) ANY model to the
+    // target height without disturbing its animation tracks.
+    this.object3d = new THREE.Group();
+    const inner = gltf.scene;
+    this.object3d.add(inner);
+    const targetH = def?.model?.height || 1.8;
+    const box = new THREE.Box3().setFromObject(inner);
+    const size = new THREE.Vector3(); box.getSize(size);
+    if (size.y > 0.001) {
+      const s = targetH / size.y;
+      inner.scale.setScalar(s);
+      const box2 = new THREE.Box3().setFromObject(inner);
+      const c = new THREE.Vector3(); box2.getCenter(c);
+      inner.position.set(-c.x, -box2.min.y, -c.z); // center x/z, feet at y=0
+    }
+    inner.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true; o.receiveShadow = true;
+        // let PBR materials pick up the scene's image-based lighting
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) { if (m && 'envMapIntensity' in m) m.envMapIntensity = 1.0; }
+      }
+    });
     this.mixer = new THREE.AnimationMixer(gltf.scene);
     this.clips = gltf.animations || [];
     this.current = null;
@@ -51,17 +80,34 @@ class GLBCharacter {
 }
 
 class AssetManagerImpl {
-  constructor() { this.loader = new GLTFLoader(); this.cache = new Map(); }
+  constructor() { this.cache = new Map(); this.loader = null; }
+
+  // Wire up the GLTF loader with Draco / KTX2 / Meshopt decoders. Call once
+  // with the renderer (needed for KTX2 GPU-format detection).
+  init(renderer) {
+    if (this.loader) return;
+    const loader = new GLTFLoader();
+    const draco = new DRACOLoader().setDecoderPath(`${THREE_CDN}/draco/`);
+    loader.setDRACOLoader(draco);
+    try {
+      const ktx2 = new KTX2Loader().setTranscoderPath(`${THREE_CDN}/basis/`).detectSupport(renderer);
+      loader.setKTX2Loader(ktx2);
+    } catch (e) { /* KTX2 optional */ }
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    this.loader = loader;
+  }
 
   // Returns a Promise<Character>. Procedural is synchronous-but-wrapped.
   async loadCharacter(def) {
     const glb = def?.model?.glb;
     if (glb) {
+      if (!this.loader) this.loader = new GLTFLoader(); // fallback if init() skipped
       try {
         const gltf = await this._loadGLB(glb);
-        // clone scene so multiple instances don't share transforms
-        const inst = gltf.scene.clone(true);
-        const char = new GLBCharacter({ scene: inst, animations: gltf.animations });
+        // SkeletonUtils.clone properly duplicates skinned meshes + skeletons so
+        // multiple instances of the same model animate independently.
+        const inst = cloneSkinned(gltf.scene);
+        const char = new GLBCharacter({ scene: inst, animations: gltf.animations }, def);
         char.setAnim('idle');
         return char;
       } catch (e) {

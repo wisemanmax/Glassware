@@ -3,6 +3,8 @@
 //  `model` drives the procedural CharacterFactory; set `model.glb` to a path to
 //  swap in a real rigged GLB (AssetManager handles the rest).
 // =============================================================================
+import { EXAMPLE_MODELS } from './config.js';
+
 export const PARTY = [
   {
     id: 'sb',
@@ -11,7 +13,10 @@ export const PARTY = [
     startLevel: 1,
     maxHp: 70, maxSp: 40, atk: 14, def: 9, agi: 12,
     weakness: null, // the hero has no exploitable weakness
-    model: { glb: null, body: 0x9dff3c, accent: 0x143b08, build: 'slime', height: 1.85 },
+    // GLB reference wired end-to-end (see config.js EXAMPLE_MODELS). Replace the
+    // URL with /assets/models/slimeby.glb to use your own. Falls back to the
+    // procedural slime if the file is missing.
+    model: { glb: EXAMPLE_MODELS.enabled ? EXAMPLE_MODELS.sb : null, body: 0x9dff3c, accent: 0x143b08, build: 'slime', height: 1.85 },
     skills: ['strike', 'acidlash', 'ooze'],
     learnset: [
       { level: 2, skillId: 'dissolve' },

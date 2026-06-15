@@ -8,6 +8,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 // Vignette + subtle color-grade (slime-tinted shadows) as a final pass.
 const GradeShader = {
@@ -39,10 +40,21 @@ export class Engine {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // realistic color pipeline: ACES filmic tone mapping + sRGB output.
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x07070b);
     this.scene.fog = new THREE.FogExp2(0x07070b, 0.012);
+
+    // Image-based lighting: a generated room environment drives realistic
+    // ambient + reflections on PBR (MeshStandardMaterial) assets — no external
+    // HDRI file required (swap in a real .hdr later for a specific mood).
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environmentIntensity = 0.6;
 
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 500);
     this.camera.position.set(0, 9, 12);
@@ -55,7 +67,7 @@ export class Engine {
     this.updaters = new Set();
     this.shake = 0;
     this._baseCam = new THREE.Vector3();
-    this._baseBloom = 0.55;
+    this._baseBloom = 0.45;
     this._hitStop = 0;
 
     this._initAudio();
@@ -64,12 +76,13 @@ export class Engine {
   }
 
   _setupLights() {
-    const amb = new THREE.AmbientLight(0x404060, 1.1);
+    const amb = new THREE.AmbientLight(0x404060, 0.4); // low — IBL provides fill
     this.scene.add(amb);
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(6, 14, 8);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.bias = -0.0004;
     key.shadow.camera.near = 1; key.shadow.camera.far = 60;
     const s = 24; const c = key.shadow.camera;
     c.left = -s; c.right = s; c.top = s; c.bottom = -s; c.updateProjectionMatrix();
@@ -88,7 +101,8 @@ export class Engine {
   _setupComposer() {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.55, 0.6, 0.85);
+    // higher threshold so only true highlights bloom (PBR-friendly)
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.45, 0.55, 0.9);
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass(GradeShader);
     this.composer.addPass(this.grade);

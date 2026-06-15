@@ -11,6 +11,7 @@ import { ui } from './ui/UI.js';
 import { SaveState } from './core/SaveState.js';
 import { newGame } from './core/GameState.js';
 
+import { assets } from './world/AssetManager.js';
 import { DialogueScene } from './scenes/DialogueScene.js';
 import { TutorialScene } from './scenes/TutorialScene.js';
 import { HubScene } from './scenes/HubScene.js';
@@ -31,6 +32,7 @@ class Game {
   constructor() {
     this.engine = new Engine();
     ui.init(this.engine);
+    assets.init(this.engine.renderer); // GLTF loader + Draco/KTX2/Meshopt
     input.bindTouch();
     this.state = newGame();
     this.scene = null;
