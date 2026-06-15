@@ -2,18 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wiseforge — The Host of Simplicity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SLIME BY — Saving the World from Corporate America</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@1,8..60,400;1,8..60,500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/src/game/style.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="game-root">
+      <canvas id="gl"></canvas>
+      <div id="ui"></div>
+      <div id="fx"></div>
+      <div id="touch"></div>
+      <div id="boot">
+        <div class="boot-logo">SLIME&nbsp;BY</div>
+        <div class="boot-sub">Saving the world from corporate America</div>
+        <button id="boot-start">START</button>
+        <button id="boot-continue" hidden>CONTINUE</button>
+        <div class="boot-hint">WASD / arrows to move · E or Space to interact · click menu buttons</div>
+      </div>
+    </div>
+    <script type="module" src="/src/game/main.js"></script>
   </body>
 </html>
