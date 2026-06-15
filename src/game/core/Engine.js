@@ -55,6 +55,8 @@ export class Engine {
     this.updaters = new Set();
     this.shake = 0;
     this._baseCam = new THREE.Vector3();
+    this._baseBloom = 0.55;
+    this._hitStop = 0;
 
     this._initAudio();
     window.addEventListener('resize', () => this.resize());
@@ -105,11 +107,17 @@ export class Engine {
   addUpdater(fn) { this.updaters.add(fn); return () => this.updaters.delete(fn); }
 
   doShake(amount = 0.4) { this.shake = Math.min(1.2, this.shake + amount); }
+  pulseBloom(amount = 0.9) { this.bloom.strength = Math.min(2.2, this.bloom.strength + amount); }
+  hitStop(ms = 70) { this._hitStop = Math.max(this._hitStop, ms / 1000); }
 
   start() {
     const loop = () => {
       this._raf = requestAnimationFrame(loop);
-      const dt = Math.min(0.05, this.clock.getDelta());
+      let dt = Math.min(0.05, this.clock.getDelta());
+      // brief hit-stop freeze for crunch on big hits
+      if (this._hitStop > 0) { this._hitStop -= dt; dt *= 0.08; }
+      // bloom pulse decay back to base
+      if (this.bloom.strength > this._baseBloom) this.bloom.strength = Math.max(this._baseBloom, this.bloom.strength - dt * 3.2);
       this.updaters.forEach((fn) => fn(dt));
       // screen shake applied to camera
       if (this.shake > 0.001) {
@@ -170,12 +178,25 @@ export class Engine {
   }
 
   clearScene() {
-    // remove everything except lights
-    const keep = new Set();
-    this.scene.traverse((o) => { if (o.isLight) keep.add(o); });
+    // remove everything except lights, disposing GPU resources to avoid the
+    // memory growth (→ WebGL context loss) that comes from many scene rebuilds.
     for (let i = this.scene.children.length - 1; i >= 0; i--) {
       const c = this.scene.children[i];
-      if (!keep.has(c)) this.scene.remove(c);
+      if (c.isLight) continue;
+      this.scene.remove(c);
+      this._disposeObject(c);
     }
+    this.renderer.renderLists?.dispose?.();
+  }
+
+  _disposeObject(obj) {
+    obj.traverse((o) => {
+      o.geometry?.dispose?.();
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      for (const m of mats) {
+        for (const k in m) { const v = m[k]; if (v && v.isTexture) v.dispose(); }
+        m.dispose?.();
+      }
+    });
   }
 }

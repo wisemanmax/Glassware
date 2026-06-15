@@ -242,4 +242,8 @@ body { font-family: 'Archivo', system-ui, sans-serif; color: var(--bone); user-s
 }
 #objective b { color: var(--magenta); display: block; font-size: 10px; letter-spacing: 0.2em; }
 
+/* full-screen impact flash */
+.screenflash { position: absolute; inset: 0; z-index: 44; pointer-events: none; mix-blend-mode: screen; opacity: 0; animation: flash linear forwards; }
+@keyframes flash { 0% { opacity: 0; } 12% { opacity: 0.6; } 100% { opacity: 0; } }
+
 .hidden { display: none !important; }

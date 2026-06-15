@@ -28,20 +28,24 @@ export function buildHub() {
     g.add(strip);
   }
 
-  // surrounding buildings (skybox-ish silhouette)
-  const ringColors = [0x1b1b28, 0x222232, 0x14141d];
-  for (let i = 0; i < 26; i++) {
-    const a = (i / 26) * Math.PI * 2;
+  // surrounding buildings (skybox-ish silhouette). Materials are SHARED across
+  // all buildings/windows (a handful of instances, not hundreds) to keep the
+  // GPU program/material count low — cheaper on real devices, stable headless.
+  const buildingMats = [0x1b1b28, 0x222232, 0x14141d].map((c) => pbrMat(c));
+  const winMats = [0x9dff3c, 0xff2d8b].map((c) => pbrMat(c, { emissive: c, ei: 1.5 }));
+  const winGeo = new THREE.BoxGeometry(0.4, 0.4, 0.05);
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2;
     const r = 26 + Math.random() * 8;
     const h = 8 + Math.random() * 26;
-    const b = box(3 + Math.random() * 3, h, 3 + Math.random() * 3, ringColors[i % 3]);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(3 + Math.random() * 3, h, 3 + Math.random() * 3), buildingMats[i % 3]);
+    b.castShadow = true; b.receiveShadow = true;
     b.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r);
-    // lit windows
-    const winCount = Math.floor(h / 3);
+    const winCount = Math.floor(h / 4);
     for (let w = 0; w < winCount; w++) {
-      if (Math.random() < 0.5) continue;
-      const win = box(0.4, 0.4, 0.05, Math.random() < 0.5 ? 0x9dff3c : 0xff2d8b, { emissive: Math.random() < 0.5 ? 0x9dff3c : 0xff2d8b, ei: 1.5 });
-      win.position.set((Math.random() - 0.5) * 2, -h / 2 + 2 + w * 3, 1.6);
+      if (Math.random() < 0.55) continue;
+      const win = new THREE.Mesh(winGeo, winMats[w % 2]);
+      win.position.set((Math.random() - 0.5) * 2, -h / 2 + 2 + w * 4, 1.6);
       b.add(win);
     }
     g.add(b);
@@ -57,10 +61,12 @@ export function buildHub() {
   const zones = [
     { id: 'cafe', label: 'Mara\'s Café', activity: 'cafe', pos: [-8, 0, -4], color: 0x38e8ff },
     { id: 'stage', label: 'Plaza Stage', activity: 'busk', pos: [8, 0, -4], color: 0xff2d8b },
-    { id: 'gym', label: 'The Gym', activity: 'gym', pos: [-10, 0, 6], color: 0xff7a3c },
-    { id: 'library', label: 'Public Library', activity: 'study', pos: [10, 0, 6], color: 0x9dff3c },
-    { id: 'studio', label: 'Glo\'s Studio', activity: 'studio', pos: [0, 0, 10], color: 0xff2d8b },
-    { id: 'tower', label: 'Maxorp Tower Entrance', activity: 'infiltrate', pos: [0, 0, -12], color: 0xffd23c },
+    { id: 'gym', label: 'The Gym', activity: 'gym', pos: [-13, 0, 7], color: 0xff7a3c },
+    { id: 'library', label: 'Public Library', activity: 'study', pos: [13, 0, 7], color: 0x9dff3c },
+    { id: 'studio', label: 'Glo\'s Studio', activity: 'studio', pos: [-6, 0, 12], color: 0xff2d8b },
+    { id: 'rooftop', label: 'Rooftop (Devon)', activity: 'rooftop', pos: [-16, 0, -3], color: 0xff7a3c },
+    { id: 'apartment', label: 'Your Apartment', activity: 'meditate', pos: [16, 0, -3], color: 0x9dff3c },
+    { id: 'tower', label: 'Maxorp Tower Entrance', activity: 'infiltrate', pos: [0, 0, -13], color: 0xffd23c },
   ];
 
   const markers = {};
@@ -113,8 +119,10 @@ export function buildDungeon(dungeonDef) {
       const panel = box(2.4, 1.6, 0.1, 0x222232, { emissive: 0xffd23c, ei: 0.12 });
       panel.position.set(-3.7, 3.4, cz); panel.rotation.y = Math.PI / 2; g.add(panel);
     }
-    // segment trigger at the far end
-    triggers.push({ index: i, z: z - len + 1.5, encounter: seg.encounter, dialogue: seg.dialogue, label: seg.label, boss: seg.encounter === 'boss' });
+    // trigger at the far end — only for segments that actually start something
+    if (seg.encounter) {
+      triggers.push({ z: z - len + 2.5, encounter: seg.encounter, dialogue: seg.dialogue, label: seg.label, boss: seg.encounter === 'boss' });
+    }
     z -= len;
   });
 
