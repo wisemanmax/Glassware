@@ -6,8 +6,8 @@
 export const ENCOUNTERS = {
   tutorial: { id: 'tutorial', enemies: ['intern'], banner: 'COGNITION BLOCKING THE WAY' },
   e1:       { id: 'e1', enemies: ['intern', 'auditbot'], banner: 'SECURITY SHADOWS' },
-  e2:       { id: 'e2', enemies: ['middlemgr', 'intern'], banner: 'MANAGEMENT LAYER' },
-  e3:       { id: 'e3', enemies: ['hrenforcer', 'auditbot'], banner: 'COMPLIANCE WALL' },
+  e2:       { id: 'e2', enemies: ['middlemgr', 'shill', 'intern'], banner: 'MARKETING FLOOR' },
+  e3:       { id: 'e3', enemies: ['saboteur', 'hrenforcer', 'auditbot'], banner: 'COMPLIANCE WALL' },
   boss:     { id: 'boss', enemies: ['liquidator'], banner: 'THE LIQUIDATOR', boss: true },
 };
 

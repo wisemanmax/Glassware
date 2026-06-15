@@ -23,6 +23,16 @@ export const ENEMIES = {
     weakness: 'tech', xp: 12, ai: 'aggressive', skills: ['e_audit'],
     model: { glb: null, body: 0x888899, accent: 0x1b1b22, build: 'drone', height: 1.5 },
   },
+  shill: {
+    id: 'shill', name: 'Brand Shill', maxHp: 40, atk: 12, def: 6, agi: 12,
+    weakness: 'mental', xp: 13, ai: 'aggressive', skills: ['e_slash', 'e_audit'],
+    model: { glb: null, body: 0xff7a3c, accent: 0x33180a, build: 'casual', height: 1.7 },
+  },
+  saboteur: {
+    id: 'saboteur', name: 'Union Buster', maxHp: 58, atk: 14, def: 9, agi: 8,
+    weakness: 'fire', xp: 18, ai: 'tactical', skills: ['e_slash', 'e_quota'],
+    model: { glb: null, body: 0x556070, accent: 0x14181f, build: 'suit', height: 1.9 },
+  },
 
   // --- MINI-BOSS: shadow of an exploitative executive ---
   liquidator: {
