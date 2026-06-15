@@ -57,6 +57,30 @@ export const BRAND = {
   voice: 'Dry, defiant, working-class wit. Punches up, never down. Slime puns earned, never forced.',
 };
 
+// =============================================================================
+//  EXAMPLE / PLACEHOLDER 3D MODELS
+//  This wires ONE real rigged-and-animated GLB end-to-end as a reference so you
+//  can see the model pipeline working, then swap in your own.
+//
+//  HOW TO USE YOUR OWN MODELS:
+//   1. Export a rigged character from Mixamo (or any humanoid) as .glb. Include
+//      animation clips named like: Idle, Walking, Punch, HitReaction, Death.
+//      (The engine maps idle/walk/attack/hit/down/cast to those names.)
+//   2. Put the file in /assets/models/ (e.g. /assets/models/slimeby.glb).
+//   3. Set the matching `model.glb` path on the character in party.js /
+//      enemies.js / confidants.js — or just edit the URLs below.
+//   The model is auto-scaled to its `model.height` and grounded, and falls back
+//   to the procedural placeholder if the file fails to load.
+//
+//  Set `enabled: false` to use the built-in procedural characters everywhere.
+// =============================================================================
+export const EXAMPLE_MODELS = {
+  enabled: true,
+  // Free, rigged, animated reference (three.js "RobotExpressive"). Replace with
+  // your own /assets/models/*.glb. Clip names map to engine anim states.
+  sb: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r184/examples/models/gltf/RobotExpressive/RobotExpressive.glb',
+};
+
 // Convenience exports
 export const C = BRAND.colors;
 export const TYPES = BRAND.damageTypes;
