@@ -10,7 +10,22 @@
       href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/src/game/style.css" />
+    <!-- Relative path so it works whether served from the domain root or a
+         project sub-path (e.g. /Glassware/). -->
+    <link rel="stylesheet" href="./src/game/style.css" />
+
+    <!-- Import map: lets the browser resolve the bare `three` specifiers from a
+         CDN with NO build step, so the raw repo runs directly on GitHub Pages.
+         (Vite still bundles `three` from node_modules in dev/build; this map is
+         simply ignored there.) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+          "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="game-root">
@@ -26,6 +41,6 @@
         <div class="boot-hint">WASD / arrows to move · E or Space to interact · click menu buttons</div>
       </div>
     </div>
-    <script type="module" src="/src/game/main.js"></script>
+    <script type="module" src="./src/game/main.js"></script>
   </body>
 </html>
